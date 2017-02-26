@@ -5,19 +5,32 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
-var index = require('./routes/index');
 var users = require('./routes/users');
 var superheroes = require('./routes/superheroes');
 var superpowers = require('./routes/superpowers');
 
 var app = express();
 
+var connection  = require('express-myconnection'); 
+var mysql = require('mysql');
+
+var config = require('./config/config.json');
+
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-app.use('/', index);
+app.use(
+    connection(mysql,{
+        host: config.mysql_config.host,
+        user: config.mysql_config.user,
+        password : config.mysql_config.password,
+        port : config.mysql_config.port,
+        database: config.mysql_config.database
+    },'request')
+);
+
 app.use('/users', users);
 app.use('/superheroes', superheroes);
 app.use('/superpowers', superpowers);
@@ -31,13 +44,8 @@ app.use(function(req, res, next) {
 
 // error handler
 app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.send(err.message);
 });
 
 module.exports = app;
