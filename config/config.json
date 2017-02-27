@@ -5,5 +5,6 @@
         "password" : "admin",
         "port" : 3306,
         "database": "superheroes"
-    }
+    },
+    "jwtSecret": "!@awgfG743ljm!F8"
 }

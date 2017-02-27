@@ -1,23 +1,25 @@
 var express = require('express');
 var router = express.Router();
 
+var mysqlUtil = require('../lib/mysql');
+
+var mysqlObj = new mysqlUtil();
+
 /**
  * LIST superpowers
  */
 router.get('/', function(req, res, next) {
     var sql_query = 'SELECT * FROM superpower';
-    req.getConnection(
-        function(err,connection) {
-            connection.query(sql_query, function(err,data) {
-                if(err) {
-                    var message = "Error on superpower table query : " + err.message;
-                    console.log(message);
-                    res.status(500);
-                    res.send(message);
-                }
 
-                res.send(data);
-            });
+    mysqlObj.ExecuteQuery(req, sql_query, null, function(err,data) {
+        if(err) {
+            var message = "Error on superpower table query : " + err.message;
+            console.log(message);
+            res.status(500);
+            res.send(message);
+        } else {
+            res.send(data);
+        }
     });
 });
 
@@ -28,51 +30,49 @@ router.get('/', function(req, res, next) {
 router.get('/:name', function(req, res, next) {
     var name = req.params.name;
     var sql_query = 'SELECT * FROM superpower WHERE name = ?';
-    req.getConnection(function(err,connection) {
-        connection.query(sql_query, [name], function(err,data) {
-            if(err) {
-                var message = "Error trying to find superpower " + name + ": " + err.message;
-                console.log(message);
-                res.status(500);
-                res.send(message);
-            } else if(data && data.length > 0) {
-                res.send(data[0]);
-            } else {
-                var message = "Superpower " + name + " not found.";
-                console.log(message);
-                res.status(404);
-                res.send(message);
-            }
-        });
-    }); 
+
+    mysqlObj.ExecuteQuery(req, sql_query, [name], function(err,data) {
+        if(err) {
+            var message = "Error trying to find superpower " + name + ": " + err.message;
+            console.log(message);
+            res.status(500);
+            res.send(message);
+        } else if(data && data.length > 0) {
+            res.send(data[0]);
+        } else {
+            var message = "Superpower " + name + " not found.";
+            console.log(message);
+            res.status(404);
+            res.send(message);
+        }
+    });
 });
 
 /**
- * CREATE / UPDATE superpower
+ * CREATE superpower
  * @params {object} body - {name: name, description: description}
  */
 router.post('/', function(req, res, next) {
     var body = JSON.parse(JSON.stringify(req.body));
     var sql_query = 'INSERT INTO superpower set ? ';
-    req.getConnection(function (err, connection) {
-        var data = {
-            name        : body.name,
-            description : body.description
-        };
 
-        var query = connection.query(sql_query, data, function(err, result) {
-            if (err) {
-                var message = "Error inserting new superpower: " + err.message;
-                console.log(message);
-                res.status(500);
-                res.send(message);
-            }
-            var messageOk = {
-                message: "Created"
-            }
+    var data = {
+        name        : body.name,
+        description : body.description
+    };
+
+    mysqlObj.ExecuteQuery(req, sql_query, data, function(err,data) {
+        if (err) {
+            var message = "Error inserting new superpower: " + err.message;
+            console.log(message);
+            res.status(500);
+            res.send(message);
+        } else {
             res.status(201);
-            res.send(messageOk);
-        });
+            res.json({
+                message: "Created"
+            });
+        }
     });
 });
 
@@ -85,26 +85,23 @@ router.put('/:name', function(req, res, next) {
     var body = JSON.parse(JSON.stringify(req.body));
     var name = req.params.name;
     var sql_query = 'UPDATE superpower set ? WHERE name = ?';
-    
-    req.getConnection(function (err, connection) {
-        var data = {
-            name        : body.name,
-            description   : body.description 
-        };
-        
-        connection.query(sql_query, [data,name], function(err, rows) {
-            if (err) {
-                var message = "Error updating superpower " + name + ": " + err.message;
-                console.log(message);
-                res.status(500);
-                res.send(message);
-            }
-            var messageOk = {
+
+    var data = {
+        name        : body.name,
+        description   : body.description 
+    };
+
+    mysqlObj.ExecuteQuery(req, sql_query, data, function(err,data) {
+        if (err) {
+            var message = "Error updating superpower " + name + ": " + err.message;
+            console.log(message);
+            res.status(500);
+            res.send(message);
+        } else {
+            res.json({
                 message: "OK"
-            }
-            res.send(messageOk);
-        });
-    
+            });
+        }
     });
 });
 
@@ -115,22 +112,19 @@ router.put('/:name', function(req, res, next) {
 router.delete('/:name', function(req, res, next) {
     var name = req.params.name;
     var sql_query = 'DELETE FROM superpower WHERE name = ?';
-    
-     req.getConnection(function (err, connection) {
-        connection.query(sql_query , [name], function(err, rows) {
-            if (err) {
-                var message = "Error deleting superpower " + name + ": " + err.message;
-                console.log(message);
-                res.status(500);
-                res.send(message);
-            }
-            var messageOk = {
+
+    mysqlObj.ExecuteQuery(req, sql_query, [name], function(err,data) {
+        if (err) {
+            var message = "Error deleting superpower " + name + ": " + err.message;
+            console.log(message);
+            res.status(500);
+            res.send(message);
+        } else {
+            res.json({
                 message: "OK"
-            }
-            res.send(messageOk);             
-        });
-        
-     });
+            });
+        }
+    });
 });
 
 module.exports = router;
