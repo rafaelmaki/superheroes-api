@@ -17,6 +17,8 @@ Modify the configuration of your database on config/config.json file
             "database": "superheroes"
         }
 
+Create a schema and run the create tables script file (/db/create_db.sql)
+
 ## Authentication
 Before you call any of APIs (except /login), you need to call /login to get a JWT token.
 
